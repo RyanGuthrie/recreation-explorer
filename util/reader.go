@@ -6,7 +6,7 @@ import (
 	"strings"
 )
 
-func ReaderToString(r io.ReadCloser) string {
+func ReaderToString(r io.Reader) string {
 	buf := new(strings.Builder)
 
 	_, err := io.Copy(buf, r)

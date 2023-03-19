@@ -7,29 +7,30 @@ import (
 	"server/response"
 )
 
-const recAreasUrl = "/api/v1/recareas"
+const facilitiesUrl = "/api/v1/facilities"
 
-type GetRecAreasCmd struct {
+type GetFacilitiesCmd struct {
 	Request        *http.Request
 	Response       *http.Response
-	ParsedResponse response.GetRecAreasResponse
+	ParsedResponse response.GetFacilitiesResponse
 }
 
-func NewGetRecAreasRequest(client recreation_gov.Client) (*Cmd[response.GetRecAreasResponse], error) {
+func NewGetFacilitiesRequest(client recreation_gov.Client, stateCode string) (*Cmd[response.GetFacilitiesResponse], error) {
 	queryParams := make(map[string]string)
-	queryParams["state"] = "CO"
+	queryParams["limit"] = "1000"
+	queryParams["state"] = stateCode
 	queryParams["sort"] = "Name"
 	queryParams["activity"] = "CAMPING"
 	queryParams["full"] = "true"
 
-	uri := NewRequestUrl(recAreasUrl, queryParams)
+	uri := NewRequestUrl(facilitiesUrl, queryParams)
 
 	req, err := http.NewRequest(http.MethodGet, uri.String(), nil)
 	if err != nil {
 		return nil, fmt.Errorf("failed creating request to %s", uri)
 	}
 
-	cmd := NewCmd[response.GetRecAreasResponse](client, req)
+	cmd := NewCmd[response.GetFacilitiesResponse](client, req)
 
 	return &cmd, nil
 }

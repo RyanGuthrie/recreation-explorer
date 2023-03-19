@@ -1,5 +1,7 @@
 package model
 
+import "fmt"
+
 type Reservation struct {
 	HistoricalReservationID string
 	OrderNumber             string
@@ -36,4 +38,8 @@ type Reservation struct {
 	NumberOfPeople          string
 	EquipmentDescription    string
 	EquipmentLength         string
+}
+
+func (r Reservation) String() string {
+	return fmt.Sprintf("Order #[%v] Date [%v - %v] Paid: [%v]", r.OrderNumber, r.StartDate, r.EndDate, r.TotalPaid)
 }

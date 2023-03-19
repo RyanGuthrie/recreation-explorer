@@ -1,5 +1,10 @@
 package model
 
+import (
+	"fmt"
+	"strings"
+)
+
 type FacilityAddress struct {
 	//Facility Address ID
 	FacilityAddressID string
@@ -33,4 +38,29 @@ type FacilityAddress struct {
 
 	//Record last update date
 	LastUpdatedDate string
+}
+
+func (address FacilityAddress) String() string {
+	var summary []string
+	if address.FacilityStreetAddress1 != "" {
+		summary = append(summary, address.FacilityStreetAddress1)
+	}
+	if address.FacilityStreetAddress2 != "" {
+		summary = append(summary, address.FacilityStreetAddress2)
+	}
+	if address.FacilityStreetAddress3 != "" {
+		summary = append(summary, address.FacilityStreetAddress3)
+	}
+
+	if address.City != "" {
+		summary = append(summary, fmt.Sprintf("%s, %s %s",
+			address.City,
+			address.AddressStateCode,
+			address.PostalCode))
+
+	} else if address.AddressStateCode != "" {
+		summary = append(summary, address.AddressStateCode)
+	}
+
+	return strings.Join(summary, "\n")
 }

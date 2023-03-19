@@ -1,5 +1,7 @@
 package model
 
+import "fmt"
+
 type Facility struct {
 	//RIDB unique Facility ID
 	FacilityID string
@@ -46,7 +48,7 @@ type Facility struct {
 	//Information about the Americans with Disabilities Act accessibility for the Facility
 	FacilityAdaAccess string
 
-	GEOJSON GeoJson
+	GeoJSON GeoJson `json:"GEOJSON"`
 
 	//Longitude in decimal degrees -180.0 to 180.0
 	FacilityLongitude float64
@@ -78,5 +80,9 @@ type Facility struct {
 	Events            []Event            `json:"EVENT"`
 	Links             []Link             `json:"LINK"`
 	Media             []Media            `json:"MEDIA"`
-	//TOUR    Tour
+	Tours             []FacilityTour     `json:"TOUR"`
+}
+
+func (f *Facility) String() string {
+	return fmt.Sprintf("%-45s ID [%s], RecAreas(#%d): %v", f.FacilityName, f.FacilityID, len(f.RecAreas), f.RecAreas)
 }

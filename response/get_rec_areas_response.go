@@ -1,13 +1,14 @@
-package model
+package response
 
 import (
 	"fmt"
+	"server/model"
 	"strings"
 )
 
 type GetRecAreasResponse struct {
-	RecData  []RecreationArea `json:"RECDATA"`
-	MetaData Metadata         `json:"METADATA"`
+	RecData  []model.RecreationArea `json:"RECDATA"`
+	MetaData model.Metadata         `json:"METADATA"`
 }
 
 func (resp GetRecAreasResponse) String() string {

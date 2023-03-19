@@ -1,5 +1,7 @@
 package model
 
+import "fmt"
+
 type Campsite struct {
 	//Campsite ID
 	CampsiteID string
@@ -22,6 +24,9 @@ type Campsite struct {
 	//Is the campsite accessible by vehicle
 	CampsiteAccessible bool
 
+	//Is the campsite reservable
+	CampsiteReservable bool
+
 	//Longitude of the permit
 	CampsiteLongitude float64
 
@@ -34,8 +39,12 @@ type Campsite struct {
 	//Record last update date
 	LastUpdatedDate string
 
-	ATTRIBUTES         []Attribute
-	PERMITTEDEQUIPMENT []PermittedEquipment
+	Attributes         []Attribute          `json:"ATTRIBUTES"`
+	PermittedEquipment []PermittedEquipment `json:"PERMITTEDEQUIPMENT"`
+	EntityMedia        []Media              `json:"ENTITYMEDIA"`
+}
 
-	//ENTITYMEDIA*	[...]
+func (c Campsite) String() string {
+	nameSummary := fmt.Sprintf("%-35s %10s", c.CampsiteName, c.CampsiteID)
+	return fmt.Sprintf("Name [%s], Facility [%-10s] Reservable: [%-5v], TypeOfUse [%-9s], Type [%-30s]", nameSummary, c.FacilityID, c.CampsiteReservable, c.TypeOfUse, c.CampsiteType)
 }

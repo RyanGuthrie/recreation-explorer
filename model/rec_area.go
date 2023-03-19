@@ -9,6 +9,9 @@ type RecreationArea struct {
 	//The agency's internal RecArea ID provided to the RIDB by the agency
 	OrgRecAreaID string
 
+	//RecArea link
+	ResourceLink string
+
 	//Parent Organization ID
 	ParentOrgID string
 

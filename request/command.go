@@ -1,11 +1,18 @@
 package request
 
 import (
+	"bufio"
 	"encoding/json"
 	"fmt"
+	"io"
+	"io/fs"
 	"net/http"
+	"os"
 	"server/client/recreation_gov"
+	"strings"
 )
+
+const tempFilename = "/tmp/failedBody.json"
 
 type Cmd[T any] struct {
 	client         recreation_gov.Client
@@ -30,8 +37,6 @@ func (cmd *Cmd[any]) Initialize() {
 	cmd.RawReq.Header.Set("apikey", RecreationGovBearer)
 }
 
-var count = 0
-
 func (cmd *Cmd[any]) Execute() error {
 	rawResponse, err := cmd.client.Clnt.Do(cmd.RawReq)
 	if err != nil {
@@ -40,19 +45,35 @@ func (cmd *Cmd[any]) Execute() error {
 
 	cmd.RawResp = rawResponse
 
-	if count > 0 {
-		//toString := util.ReaderToString(rawResponse.Body)
-		//fmt.Println(toString)
-	}
+	bodyBuf := new(strings.Builder)
+	bodyReader := io.TeeReader(rawResponse.Body, bufio.NewWriter(bodyBuf))
 
-	count++
-
-	decoder := json.NewDecoder(rawResponse.Body)
+	decoder := json.NewDecoder(bodyReader)
 	decoder.DisallowUnknownFields()
 
 	err = decoder.Decode(&cmd.ParsedResponse)
+
+	// The body must be calculated here because we are Tee-ing the original reader
+	body := bodyBuf.String()
+
+	if rawResponse.StatusCode != http.StatusOK {
+		return fmt.Errorf("received failed request [%v]: %v", rawResponse.StatusCode, body)
+	}
+
 	if err != nil {
-		return fmt.Errorf("failed deserializing response: %s", err)
+		if err := cmd.saveTo(body, tempFilename); err != nil {
+			return err
+		}
+
+		return fmt.Errorf("failed deserializing response (file://%s): %s", tempFilename, err)
+	}
+
+	return nil
+}
+
+func (cmd *Cmd[any]) saveTo(body, filename string) error {
+	if err := os.WriteFile(filename, []byte(body), fs.ModePerm); err != nil {
+		return fmt.Errorf("failed writing body to temp file [file://%s]: %s", filename, err)
 	}
 
 	return nil

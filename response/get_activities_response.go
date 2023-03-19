@@ -1,13 +1,14 @@
-package model
+package response
 
 import (
 	"fmt"
+	"server/model"
 	"strings"
 )
 
 type GetActivitiesResponse struct {
-	RecData  []Activity `json:"RECDATA"`
-	MetaData Metadata   `json:"METADATA"`
+	RecData  []model.Activity `json:"RECDATA"`
+	MetaData model.Metadata   `json:"METADATA"`
 }
 
 func (resp GetActivitiesResponse) String() string {

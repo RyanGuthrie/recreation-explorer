@@ -1,5 +1,7 @@
 package model
 
+import "fmt"
+
 type Event struct {
 	//Event ID
 	EventID string
@@ -9,4 +11,8 @@ type Event struct {
 
 	//Internet address (URL) to a web site providing details
 	ResourceLink string
+}
+
+func (event Event) String() string {
+	return fmt.Sprintf("%s (%s)\nLink: %s", event.EventName, event.EventID, event.ResourceLink)
 }
