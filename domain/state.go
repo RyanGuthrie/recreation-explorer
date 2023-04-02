@@ -1,11 +1,14 @@
 package domain
 
 import (
+	"fmt"
 	"github.com/manifoldco/promptui"
 	"log"
 	"server/client/recreation_gov"
 	"server/prompt"
 	"server/request"
+	"server/response"
+	"strings"
 )
 
 type State struct {
@@ -19,11 +22,6 @@ type State struct {
 var client = recreation_gov.NewHttpClient()
 
 func GetState(cursorPos *int) (State, error) {
-	var states []State
-	for state, code := range StateToCode {
-		states = append(states, State{Name: state, Code: code})
-	}
-
 	selectTemplates := promptui.SelectTemplates{
 		Active:   "→ {{ .Name | red }}{{if .Code}} ({{ .Code | red }}){{end}} ←",
 		Inactive: "{{ .Name | cyan }}",
@@ -32,12 +30,12 @@ func GetState(cursorPos *int) (State, error) {
 
 	state, err := prompt.Select(
 		"Select State",
-		states, cursorPos,
+		States, cursorPos,
 		selectTemplates,
 		func(item State) string {
 			return item.Name
 		}, func(l, r int) bool {
-			return states[l].Code < states[r].Code
+			return States[l].Code < States[r].Code
 		}, State{Name: "Quit Program"})
 	if err != nil {
 		return State{}, err
@@ -46,15 +44,24 @@ func GetState(cursorPos *int) (State, error) {
 	return *state, nil
 }
 
-func (state State) Explore() error {
-	var cursorPos = 0
+func ExecuteGetFacilitiesCmd(state State) (*request.Cmd[response.GetFacilitiesResponse], error) {
 	cmd, err := request.NewGetFacilitiesRequest(client, state.Code)
 	if err != nil {
 		log.Fatalln(err)
 	}
 
 	if err = cmd.Execute(); err != nil {
-		log.Fatalf("Failed executing req [%v]: %s", cmd.RawReq.URL, err)
+		return nil, fmt.Errorf("failed executing req [%v]: %s", cmd.RawReq.URL, err)
+	}
+	return cmd, nil
+}
+
+func (state State) Explore() error {
+	var cursorPos = 0
+
+	cmd, err := ExecuteGetFacilitiesCmd(state)
+	if err != nil {
+		return err
 	}
 
 	for {
@@ -74,69 +81,74 @@ func (state State) Explore() error {
 	}
 }
 
-var StateToCode = map[string]string{
-	"Alabama":        "AL",
-	"Alaska":         "AK",
-	"Arizona":        "AZ",
-	"Arkansas":       "AR",
-	"California":     "CA",
-	"Colorado":       "CO",
-	"Connecticut":    "CT",
-	"Delaware":       "DE",
-	"Florida":        "FL",
-	"Georgia":        "GA",
-	"Hawaii":         "HI",
-	"Idaho":          "ID",
-	"Illinois":       "IL",
-	"Indiana":        "IN",
-	"Iowa":           "IA",
-	"Kansas":         "KS",
-	"Kentucky":       "KY",
-	"Louisiana":      "LA",
-	"Maine":          "ME",
-	"Maryland":       "MD",
-	"Massachusetts":  "MA",
-	"Michigan":       "MI",
-	"Minnesota":      "MN",
-	"Mississippi":    "MS",
-	"Missouri":       "MO",
-	"Montana":        "MT",
-	"Nebraska":       "NE",
-	"Nevada":         "NV",
-	"New Hampshire":  "NH",
-	"New Jersey":     "NJ",
-	"New Mexico":     "NM",
-	"New York":       "NY",
-	"North Carolina": "NC",
-	"North Dakota":   "ND",
-	"Ohio":           "OH",
-	"Oklahoma":       "OK",
-	"Oregon":         "OR",
-	"Pennsylvania":   "PA",
-	"Rhode Island":   "RI",
-	"South Carolina": "SC",
-	"South Dakota":   "SD",
-	"Tennessee":      "TN",
-	"Texas":          "TX",
-	"Utah":           "UT",
-	"Vermont":        "VT",
-	"Virginia":       "VA",
-	"Washington":     "WA",
-	"West Virginia":  "WV",
-	"Wisconsin":      "WI",
-	"Wyoming":        "WY",
-	// Territories
-	"American Samoa":                 "AS",
-	"District of Columbia":           "DC",
-	"Federated States of Micronesia": "FM",
-	"Guam":                           "GU",
-	"Marshall Islands":               "MH",
-	"Northern Mariana Islands":       "MP",
-	"Palau":                          "PW",
-	"Puerto Rico":                    "PR",
-	"Virgin Islands":                 "VI",
-	// Armed Forces (AE includes Europe, Africa, Canada, and the Middle East)
-	"Armed Forces Americas": "AA",
-	"Armed Forces Europe":   "AE",
-	"Armed Forces Pacific":  "AP",
+var States = []State{
+	{Name: "Alabama", Code: "AL"},
+	{Name: "Alaska", Code: "AK"},
+	{Name: "Arizona", Code: "AZ"},
+	{Name: "Arkansas", Code: "AR"},
+	{Name: "California", Code: "CA"},
+	{Name: "Colorado", Code: "CO"},
+	{Name: "Connecticut", Code: "CT"},
+	{Name: "Delaware", Code: "DE"},
+	{Name: "Florida", Code: "FL"},
+	{Name: "Georgia", Code: "GA"},
+	{Name: "Hawaii", Code: "HI"},
+	{Name: "Idaho", Code: "ID"},
+	{Name: "Illinois", Code: "IL"},
+	{Name: "Indiana", Code: "IN"},
+	{Name: "Iowa", Code: "IA"},
+	{Name: "Kansas", Code: "KS"},
+	{Name: "Kentucky", Code: "KY"},
+	{Name: "Louisiana", Code: "LA"},
+	{Name: "Maine", Code: "ME"},
+	{Name: "Maryland", Code: "MD"},
+	{Name: "Massachusetts", Code: "MA"},
+	{Name: "Michigan", Code: "MI"},
+	{Name: "Minnesota", Code: "MN"},
+	{Name: "Mississippi", Code: "MS"},
+	{Name: "Missouri", Code: "MO"},
+	{Name: "Montana", Code: "MT"},
+	{Name: "Nebraska", Code: "NE"},
+	{Name: "Nevada", Code: "NV"},
+	{Name: "New Hampshire", Code: "NH"},
+	{Name: "New Jersey", Code: "NJ"},
+	{Name: "New Mexico", Code: "NM"},
+	{Name: "New York", Code: "NY"},
+	{Name: "North Carolina", Code: "NC"},
+	{Name: "North Dakota", Code: "ND"},
+	{Name: "Ohio", Code: "OH"},
+	{Name: "Oklahoma", Code: "OK"},
+	{Name: "Oregon", Code: "OR"},
+	{Name: "Pennsylvania", Code: "PA"},
+	{Name: "Rhode Island", Code: "RI"},
+	{Name: "South Carolina", Code: "SC"},
+	{Name: "South Dakota", Code: "SD"},
+	{Name: "Tennessee", Code: "TN"},
+	{Name: "Texas", Code: "TX"},
+	{Name: "Utah", Code: "UT"},
+	{Name: "Vermont", Code: "VT"},
+	{Name: "Virginia", Code: "VA"},
+	{Name: "Washington", Code: "WA"},
+	{Name: "West Virginia", Code: "WV"},
+	{Name: "Wisconsin", Code: "WI"},
+	{Name: "Wyoming", Code: "WY"},
+	{Name: "American Samoa", Code: "AS"},
+	{Name: "District of Columbia", Code: "DC"},
+	{Name: "Federated States of Micronesia", Code: "FM"},
+	{Name: "Guam", Code: "GU"},
+	{Name: "Marshall Islands", Code: "MH"},
+	{Name: "Northern Mariana Islands", Code: "MP"},
+	{Name: "Palau", Code: "PW"},
+	{Name: "Puerto Rico", Code: "PR"},
+	{Name: "Virgin Islands", Code: "VI"},
+}
+
+func FindState(name string) (State, error) {
+	for i := range States {
+		if strings.ToLower(States[i].Name) == strings.ToLower(name) {
+			return States[i], nil
+		}
+	}
+
+	return State{}, fmt.Errorf("invalid state: %v", name)
 }

@@ -4,18 +4,35 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/chzyer/logex"
+	"github.com/julienschmidt/httprouter"
 	"net/http"
 )
 
 type availableRoutes struct {
-	Routes []string `json:"routes"`
+	Methods map[string][]string `json:"method"`
 }
 
-func NewIndex(routes []string) func(http.ResponseWriter, *http.Request) {
-	return func(writer http.ResponseWriter, _ *http.Request) {
+func NewIndex(routes []Route) func(http.ResponseWriter, *http.Request, httprouter.Params) {
+	notFoundHandler := http.NotFoundHandler()
+
+	return func(writer http.ResponseWriter, request *http.Request, _ httprouter.Params) {
+		if request.URL.Path != "/" {
+			notFoundHandler.ServeHTTP(writer, request)
+			return
+		}
+
+		methodToPaths := make(map[string][]string)
+		for _, route := range routes {
+			paths, exists := methodToPaths[route.Verb]
+			if !exists {
+				paths = []string{}
+			}
+			methodToPaths[route.Verb] = append(paths, route.Path)
+		}
+
 		err := json.
 			NewEncoder(writer).
-			Encode(availableRoutes{Routes: routes})
+			Encode(availableRoutes{Methods: methodToPaths})
 
 		if err != nil {
 			writer.WriteHeader(http.StatusInternalServerError)

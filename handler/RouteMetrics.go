@@ -35,9 +35,14 @@ type RouteMetrics struct {
 	Id                  string
 	RequestCounter      prometheus.Counter
 	RequestLatencies    prometheus.Histogram
+	RequestSize         prometheus.Histogram
+	ResponseSize        prometheus.Histogram
 	statusCodeCounters  map[int]prometheus.Counter
 	statusGroupCounters map[int]prometheus.Counter
 }
+
+const kb = 1024
+const mb = kb * kb
 
 func NewRouteMetrics(Id string) *RouteMetrics {
 	return &RouteMetrics{
@@ -49,6 +54,34 @@ func NewRouteMetrics(Id string) *RouteMetrics {
 			Help:      "Total number of HTTP requests made for the specific method+route"}),
 		statusCodeCounters:  make(map[int]prometheus.Counter),
 		statusGroupCounters: make(map[int]prometheus.Counter),
+		RequestSize: simple_prom.Metrics.NewHistogram(prometheus.HistogramOpts{
+			Namespace: "http",
+			Subsystem: Id,
+			Name:      "request_bytes",
+			Help:      "Bytes per request",
+			Buckets: []float64{
+				float64(1 * kb),
+				float64(5 * kb),
+				float64(25 * kb),
+				float64(100 * kb),
+				float64(500 * kb),
+				float64(1 * mb),
+				float64(5 * mb)},
+		}),
+		ResponseSize: simple_prom.Metrics.NewHistogram(prometheus.HistogramOpts{
+			Namespace: "http",
+			Subsystem: Id,
+			Name:      "response_bytes",
+			Help:      "Bytes per request",
+			Buckets: []float64{
+				float64(1 * kb),
+				float64(5 * kb),
+				float64(25 * kb),
+				float64(100 * kb),
+				float64(500 * kb),
+				float64(1 * mb),
+				float64(5 * mb)},
+		}),
 		RequestLatencies: simple_prom.Metrics.NewHistogram(prometheus.HistogramOpts{
 			Namespace: "http",
 			Subsystem: Id,

@@ -2,17 +2,15 @@ package main
 
 import (
 	"flag"
-	"fmt"
 	"github.com/RyanGuthrie/simple_prom"
+	"github.com/julienschmidt/httprouter"
 	"log"
 	"net/http"
 	"server/controller"
 	"server/domain"
 	"server/handler"
 	"server/prompt"
-	"time"
 )
-import "golang.org/x/exp/maps"
 
 var interactive = flag.Bool("i", false, "If specified, starts in interactive mode using the CLI")
 
@@ -22,8 +20,6 @@ func init() {
 }
 
 func main() {
-	fmt.Printf("Value of interactive: %v\n", *interactive)
-
 	if *interactive {
 		var cursorPos int = 0
 		for {
@@ -46,29 +42,39 @@ func main() {
 }
 
 func startHttpServer() {
-	routes := make(map[string]func(http.ResponseWriter, *http.Request))
-	routes["/states"] = controller.StateIndex
+	requestLoggingHandler := handler.NewRequestLoggingHandler()
 
-	mux := &http.ServeMux{}
-
-	for route, handlerFunc := range routes {
-		mux.HandleFunc(route, handlerFunc)
+	routes := []controller.Route{
+		{Verb: http.MethodGet, Path: "/metrics", Handler: requestLoggingHandler.ToHandle(simple_prom.Metrics.Handler)},
+		{Verb: http.MethodGet, Path: "/state", Handler: controller.StateIndex},
+		{Verb: http.MethodGet, Path: "/state/:state/facility", Handler: controller.FacilityIndex},
 	}
 
-	mux.HandleFunc("/", controller.NewIndex(maps.Keys(routes)))
-	mux.Handle("/metrics", simple_prom.Metrics.Handler)
-
-	srv := &http.Server{
-		Addr:         ":8000",
-		ReadTimeout:  30 * time.Second,
-		WriteTimeout: 30 * time.Second,
-		IdleTimeout:  30 * time.Second,
-		Handler:      handler.RequestLoggingHandler(mux),
+	router := httprouter.New()
+	for _, route := range routes {
+		switch route.Verb {
+		case http.MethodGet:
+			router.GET(route.Path, requestLoggingHandler.Handle(route.Handler))
+		case http.MethodPut:
+			router.PUT(route.Path, requestLoggingHandler.Handle(route.Handler))
+		case http.MethodPost:
+			router.POST(route.Path, requestLoggingHandler.Handle(route.Handler))
+		case http.MethodDelete:
+			router.DELETE(route.Path, requestLoggingHandler.Handle(route.Handler))
+		case http.MethodHead:
+			router.HEAD(route.Path, requestLoggingHandler.Handle(route.Handler))
+		case http.MethodOptions:
+			router.OPTIONS(route.Path, requestLoggingHandler.Handle(route.Handler))
+		case http.MethodPatch:
+			router.PATCH(route.Path, requestLoggingHandler.Handle(route.Handler))
+		default:
+			log.Fatalf("Unsupported verb: %v when constructing route for %v\n", route.Verb, route.Path)
+		}
 	}
 
-	err := srv.ListenAndServe()
+	router.GET("/", requestLoggingHandler.Handle(controller.NewIndex(routes)))
 
-	if err != nil {
+	if err := http.ListenAndServe(":8000", router); err != nil {
 		log.Panicf("Failed starting HTTP server: %v", err)
 	}
 

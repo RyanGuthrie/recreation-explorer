@@ -3,9 +3,11 @@ package handler
 import (
 	"fmt"
 	"github.com/felixge/httpsnoop"
+	"github.com/julienschmidt/httprouter"
 	"log"
 	"net/http"
 	"strings"
+	"time"
 )
 
 func idOf(request *http.Request) string {
@@ -19,38 +21,67 @@ func idOf(request *http.Request) string {
 	return fmt.Sprintf("%v_%v", request.Method, sanitizedURL)
 }
 
-func RequestLoggingHandler(handler http.Handler) http.Handler {
-	overallRouteMetrics := NewRouteMetrics("overall")
+type RequestLoggingHandle struct {
+	overallMetrics *RouteMetrics
+}
 
-	return http.HandlerFunc(
-		func(response http.ResponseWriter, request *http.Request) {
-			id := idOf(request)
-			routeMetrics := ServerRequestMetrics.RouteMetricsFor(id)
+func NewRequestLoggingHandler() RequestLoggingHandle {
+	return RequestLoggingHandle{
+		overallMetrics: NewRouteMetrics("overall"),
+	}
+}
 
-			routeMetrics.RequestCounter.Inc()
-			overallRouteMetrics.RequestCounter.Inc()
+func (h RequestLoggingHandle) ToHandle(handler http.Handler) httprouter.Handle {
+	return func(writer http.ResponseWriter, request *http.Request, _ httprouter.Params) {
+		handler.ServeHTTP(writer, request)
+	}
+}
 
-			m := httpsnoop.CaptureMetrics(handler, response, request)
+func (h RequestLoggingHandle) Handle(handler httprouter.Handle) httprouter.Handle {
+	return func(response http.ResponseWriter, request *http.Request, params httprouter.Params) {
+		startTime := time.Now()
 
-			path := request.URL.Path
-			responseStatus := m.Code
-			responseSize := m.Written
-			duration := m.Duration
+		id := idOf(request)
+		routeMetrics := ServerRequestMetrics.RouteMetricsFor(id)
 
-			routeMetrics.incrementStatusCodeCounter(responseStatus)
-			overallRouteMetrics.incrementStatusCodeCounter(responseStatus)
+		routeMetrics.RequestCounter.Inc()
+		h.overallMetrics.RequestCounter.Inc()
 
-			routeMetrics.RequestLatencies.Observe(duration.Seconds())
-			overallRouteMetrics.RequestLatencies.Observe(duration.Seconds())
-
-			log.Printf(
-				"[%v %v], Status: [%v], Size: [%v], Time: [%v]",
-				request.Method,
-				path,
-				responseStatus,
-				responseSize,
-				duration,
-			)
-
+		handlerAdapter := http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
+			handler(writer, request, params)
 		})
+
+		requestSize := request.ContentLength
+		m := httpsnoop.CaptureMetrics(handlerAdapter, response, request)
+
+		routeMetrics.incrementStatusCodeCounter(m.Code)
+		h.overallMetrics.incrementStatusCodeCounter(m.Code)
+
+		routeMetrics.RequestLatencies.Observe(m.Duration.Seconds())
+		h.overallMetrics.RequestLatencies.Observe(m.Duration.Seconds())
+
+		routeMetrics.RequestSize.Observe(float64(requestSize))
+		routeMetrics.ResponseSize.Observe(float64(m.Written))
+
+		endTime := time.Now()
+
+		/**
+		  GET /metrics
+		    Start: [2023-04-02T22:27:31Z] Proto:  [1.1] RequestBody:  [0]
+		    End:   [2023-04-02T22:27:31Z] Status: [200] ResponseBody: [4749] Duration [3.399459ms]
+		*/
+		log.Printf("%v %v\n"+
+			"  Start: [%v] Proto:  [%v] RequestBody:  [%v]\n"+
+			"  End:   [%v] Status: [%v] ResponseBody: [%v] Duration [%v]\n",
+			request.Method,
+			request.URL.Path,
+			startTime.UTC().Format(time.RFC3339),
+			fmt.Sprintf("%d.%d", request.ProtoMajor, request.ProtoMinor),
+			requestSize,
+			endTime.UTC().Format(time.RFC3339),
+			m.Code,
+			m.Written,
+			m.Duration,
+		)
+	}
 }

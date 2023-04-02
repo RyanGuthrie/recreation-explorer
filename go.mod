@@ -7,9 +7,9 @@ require (
 	github.com/redis/go-redis/v9 v9.0.2
 )
 
-require github.com/RyanGuthrie/simple_prom v1.0.5
+require github.com/RyanGuthrie/simple_prom v1.0.9
 
-require golang.org/x/exp v0.0.0-20230321023759-10a507213a29
+require github.com/julienschmidt/httprouter v1.3.0
 
 require (
 	github.com/chzyer/logex v1.1.10
