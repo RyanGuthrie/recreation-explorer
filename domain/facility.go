@@ -59,7 +59,9 @@ func Explore(facility model.Facility) error {
 			fmt.Sprintf("Exit %s", facility.FacilityName),
 		)
 
-		if err != nil {
+		if err == prompt.ExitError {
+			return nil
+		} else if err != nil {
 			return err
 		}
 

@@ -44,7 +44,9 @@ func (c Campsites) Explore() error {
 			model.Campsite{CampsiteName: "Exit Campsites"},
 		)
 
-		if err != nil {
+		if err == prompt.ExitError {
+			return nil
+		} else if err != nil {
 			return err
 		}
 
