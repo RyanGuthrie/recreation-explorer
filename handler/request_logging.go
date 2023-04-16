@@ -2,12 +2,13 @@ package handler
 
 import (
 	"fmt"
-	"github.com/felixge/httpsnoop"
-	"github.com/julienschmidt/httprouter"
 	"log"
 	"net/http"
 	"strings"
 	"time"
+
+	"github.com/felixge/httpsnoop"
+	"github.com/julienschmidt/httprouter"
 )
 
 func idOf(request *http.Request) string {
@@ -57,8 +58,10 @@ func (h RequestLoggingHandle) Handle(handler httprouter.Handle) httprouter.Handl
 		routeMetrics.incrementStatusCodeCounter(m.Code)
 		h.overallMetrics.incrementStatusCodeCounter(m.Code)
 
-		routeMetrics.RequestLatencies.Observe(m.Duration.Seconds())
-		h.overallMetrics.RequestLatencies.Observe(m.Duration.Seconds())
+		routeMetrics.RequestLatencies.Observe(float64(m.Duration.Milliseconds()))
+		h.overallMetrics.RequestLatencies.Observe(float64(m.Duration.Milliseconds()))
+		routeMetrics.RequestLatenciesSummary.Observe(float64(m.Duration.Milliseconds()))
+		h.overallMetrics.RequestLatenciesSummary.Observe(float64(m.Duration.Milliseconds()))
 
 		routeMetrics.RequestSize.Observe(float64(requestSize))
 		routeMetrics.ResponseSize.Observe(float64(m.Written))

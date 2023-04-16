@@ -2,10 +2,13 @@ package main
 
 import (
 	"flag"
-	"github.com/RyanGuthrie/simple_prom"
-	"github.com/julienschmidt/httprouter"
 	"log"
 	"net/http"
+	"time"
+
+	"github.com/RyanGuthrie/simple_prom"
+	"github.com/julienschmidt/httprouter"
+	"github.com/prometheus/client_golang/prometheus"
 	"server/controller"
 	"server/domain"
 	"server/handler"
@@ -37,7 +40,22 @@ func main() {
 			}
 		}
 	} else {
+		startTimeSeconds := time.Now().Unix()
+
+		closeChan := simple_prom.Metrics.NewGaugeFunc(
+			prometheus.GaugeOpts{
+				Namespace: "server",
+				Name:      "uptime_seconds",
+				Help:      "Uptime of server in seconds",
+			},
+			15*time.Second,
+			func() float64 {
+				return float64(time.Now().Unix() - startTimeSeconds)
+			})
+
 		startHttpServer()
+
+		close(closeChan)
 	}
 }
 

@@ -3,9 +3,12 @@ package controller
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/julienschmidt/httprouter"
 	"log"
+	"math/rand"
 	"net/http"
+	"time"
+
+	"github.com/julienschmidt/httprouter"
 	"server/domain"
 )
 
@@ -19,6 +22,9 @@ type StateCodes struct {
 }
 
 func StateIndex(writer http.ResponseWriter, _ *http.Request, _ httprouter.Params) {
+	var randomDuration time.Duration = time.Duration(rand.Int63n(500)) * time.Millisecond
+	time.Sleep(randomDuration)
+
 	err := json.NewEncoder(writer).Encode(domainStateToJson(domain.States))
 	if err != nil {
 		writer.WriteHeader(http.StatusInternalServerError)

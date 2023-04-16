@@ -7,7 +7,7 @@ require (
 	github.com/redis/go-redis/v9 v9.0.2
 )
 
-require github.com/RyanGuthrie/simple_prom v1.0.9
+require github.com/RyanGuthrie/simple_prom v1.0.14
 
 require github.com/julienschmidt/httprouter v1.3.0
 
