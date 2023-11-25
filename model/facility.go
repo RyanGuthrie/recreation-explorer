@@ -48,6 +48,9 @@ type Facility struct {
 	//Information about the Americans with Disabilities Act accessibility for the Facility
 	FacilityAdaAccess string
 
+	//
+	FacilityAccessibilityText string
+
 	GeoJSON GeoJson `json:"GEOJSON"`
 
 	//Longitude in decimal degrees -180.0 to 180.0

@@ -30,7 +30,8 @@ func GetState(cursorPos *int) (State, error) {
 
 	state, err := prompt.Select(
 		"Select State",
-		States, cursorPos,
+		States,
+		cursorPos,
 		selectTemplates,
 		func(item State) string {
 			return item.Name

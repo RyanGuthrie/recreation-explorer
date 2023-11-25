@@ -2,7 +2,6 @@ package handler
 
 import (
 	"fmt"
-	"strconv"
 	"sync"
 	"time"
 
@@ -40,22 +39,21 @@ type RouteMetrics struct {
 	RequestSize             prometheus.Histogram
 	ResponseSize            prometheus.Histogram
 	statusCodeCounters      map[int]prometheus.Counter
-	statusGroupCounters     map[int]prometheus.Counter
+	statusGroupCounter      *prometheus.CounterVec
 }
 
 const kb = 1024
 const mb = kb * kb
 
 func NewRouteMetrics(Id string) *RouteMetrics {
-	return &RouteMetrics{
+	metrics := RouteMetrics{
 		Id: Id,
 		RequestCounter: simple_prom.Metrics.NewCounter(prometheus.CounterOpts{
 			Namespace: "http",
 			Subsystem: Id,
 			Name:      "requests_total",
 			Help:      "Total number of HTTP requests made for the specific method+route"}),
-		statusCodeCounters:  make(map[int]prometheus.Counter),
-		statusGroupCounters: make(map[int]prometheus.Counter),
+		statusCodeCounters: make(map[int]prometheus.Counter),
 		RequestSize: simple_prom.Metrics.NewHistogram(prometheus.HistogramOpts{
 			Namespace: "http",
 			Subsystem: Id,
@@ -122,6 +120,14 @@ func NewRouteMetrics(Id string) *RouteMetrics {
 			// BufCap:     10000,
 		}),
 	}
+
+	metrics.init()
+
+	return &metrics
+}
+
+func (routeMetrics *RouteMetrics) init() {
+	routeMetrics.statusGroupCounter = routeMetrics.newCounterForStatusGroup()
 }
 
 func (routeMetrics *RouteMetrics) incrementStatusCodeCounter(statusCode int) {
@@ -129,20 +135,14 @@ func (routeMetrics *RouteMetrics) incrementStatusCodeCounter(statusCode int) {
 	defer routeMetrics.mutex.Unlock()
 
 	var statusCodeCounter, foundCode = routeMetrics.statusCodeCounters[statusCode]
-	var statusGroupCounter, foundGroup = routeMetrics.statusGroupCounters[statusCode/100]
 
 	if !foundCode {
 		statusCodeCounter = routeMetrics.newCounterForStatusCode(statusCode)
 		routeMetrics.statusCodeCounters[statusCode] = statusCodeCounter
 	}
 
-	if !foundGroup {
-		statusGroupCounter = routeMetrics.newCounterForStatusGroup(statusCode)
-		routeMetrics.statusGroupCounters[statusCode/100] = statusGroupCounter
-	}
-
 	statusCodeCounter.Inc()
-	statusGroupCounter.Inc()
+	routeMetrics.statusGroupCounter.With(prometheus.Labels{"code": fmt.Sprintf("%dXX", statusCode/100)}).Inc()
 }
 
 func (routeMetrics *RouteMetrics) newCounterForStatusCode(statusCode int) prometheus.Counter {
@@ -153,26 +153,14 @@ func (routeMetrics *RouteMetrics) newCounterForStatusCode(statusCode int) promet
 		Help:      fmt.Sprintf("Number of HTTP Status Code %v for the specific method+route", statusCode)})
 }
 
-func (routeMetrics *RouteMetrics) newCounterForStatusGroup(statusCode int) prometheus.Counter {
-	var group string
-	switch {
-	case statusCode < 200:
-		group = "1XX"
-	case statusCode < 300:
-		group = "2XX"
-	case statusCode < 400:
-		group = "3XX"
-	case statusCode < 500:
-		group = "4XX"
-	case statusCode < 600:
-		group = "5XX"
-	default:
-		group = strconv.Itoa(statusCode)
-	}
-
-	return simple_prom.Metrics.NewCounter(prometheus.CounterOpts{
-		Namespace: "http",
-		Subsystem: routeMetrics.Id,
-		Name:      fmt.Sprintf("statuses:%v", group),
-		Help:      fmt.Sprintf("Number of HTTP Status responses in group %v for the specific method+route", group)})
+func (routeMetrics *RouteMetrics) newCounterForStatusGroup() *prometheus.CounterVec {
+	return simple_prom.Metrics.NewCounterVec(
+		prometheus.CounterOpts{
+			Namespace: "http",
+			Subsystem: routeMetrics.Id,
+			Name:      "status",
+			Help:      "Number of HTTP Status responses for the specific method+route",
+		},
+		[]string{"code"},
+	)
 }
