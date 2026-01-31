@@ -4,75 +4,75 @@ import "fmt"
 
 type Facility struct {
 	//RIDB unique Facility ID
-	FacilityID string
+	FacilityID string `json:"FacilityID"`
 
 	//Legacy Facility ID
-	LegacyFacilityID string
+	LegacyFacilityID string `json:"LegacyFacilityID"`
 
 	//The agency's internal Facility ID provided to the RIDB by the agency
-	OrgFacilityID string
+	OrgFacilityID string `json:"OrgFacilityID"`
 
 	//The parent Organization ID
-	ParentOrgID string
+	ParentOrgID string `json:"ParentOrgID"`
 
 	//The parent RecArea ID
-	ParentRecAreaID string
+	ParentRecAreaID string `json:"ParentRecAreaID"`
 
 	//Full name of the Facility
-	FacilityName string
+	FacilityName string `json:"FacilityName"`
 
 	//Text describing the main features of the Facility
-	FacilityDescription string
+	FacilityDescription string `json:"FacilityDescription"`
 
 	//Description of the type of Facility
-	FacilityTypeDescription string
+	FacilityTypeDescription string `json:"FacilityTypeDescription"`
 
 	//Text describing monetary charges associated with entrance to or usage of the Facility
-	FacilityUseFeeDescription string
+	FacilityUseFeeDescription string `json:"FacilityUseFeeDescription"`
 
 	//Text that provides general directions and/or the general location of the Facility
-	FacilityDirections string
+	FacilityDirections string `json:"FacilityDirections"`
 
 	//Phone number of the Facility
-	FacilityPhone string
+	FacilityPhone string `json:"FacilityPhone"`
 
 	//Email address of the Facility
-	FacilityEmail string
+	FacilityEmail string `json:"FacilityEmail"`
 
 	//Internet address (URL) for the web site hosting the reservation system
-	FacilityReservationURL string
+	FacilityReservationURL string `json:"FacilityReservationURL"`
 
 	//Internet address (URL) that hosts the Facility map
-	FacilityMapURL string
+	FacilityMapURL string `json:"FacilityMapURL"`
 
 	//Information about the Americans with Disabilities Act accessibility for the Facility
-	FacilityAdaAccess string
+	FacilityAdaAccess string `json:"FacilityAdaAccess"`
 
 	//
-	FacilityAccessibilityText string
+	FacilityAccessibilityText string `json:"FacilityAccessibilityText"`
 
 	GeoJSON GeoJson `json:"GEOJSON"`
 
 	//Longitude in decimal degrees -180.0 to 180.0
-	FacilityLongitude float64
+	FacilityLongitude float64 `json:"FacilityLongitude"`
 
 	//Latitude in decimal degrees -90.0 to 90.0
-	FacilityLatitude float64
+	FacilityLatitude float64 `json:"FacilityLatitude"`
 
 	//Details on the stay limits for the Facility
-	StayLimit string
+	StayLimit string `json:"StayLimit"`
 
 	//List of keywords for the Facility
-	Keywords string
+	Keywords string `json:"Keywords"`
 
 	//Whether the Facility is reservable
-	Reservable bool
+	Reservable bool `json:"Reservable"`
 
 	//Whether the Facility is enabled
-	Enabled bool
+	Enabled bool `json:"Enabled"`
 
 	//Record last update date
-	LastUpdatedDate string
+	LastUpdatedDate string `json:"LastUpdatedDate"`
 
 	Campsites         []Campsite         `json:"CAMPSITE"`
 	PermitEntrances   []PermitEntrance   `json:"PERMITENTRANCE"`

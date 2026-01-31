@@ -1,6 +1,7 @@
 package main
 
 import (
+	"errors"
 	"flag"
 	"log"
 	"net/http"
@@ -15,7 +16,7 @@ import (
 	"server/prompt"
 )
 
-var interactive = flag.Bool("i", false, "If specified, starts in interactive mode using the CLI")
+var interactive = flag.Bool("i", true, "If specified, starts in interactive mode using the CLI")
 
 func init() {
 	log.SetFlags(0)
@@ -28,7 +29,7 @@ func main() {
 		for {
 			state, err := domain.GetState(&cursorPos)
 
-			if err == prompt.ExitError {
+			if errors.Is(err, prompt.ExitError) {
 				log.Println("Exiting, goodbye!")
 				return
 			} else if err != nil {

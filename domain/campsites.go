@@ -1,6 +1,7 @@
 package domain
 
 import (
+	"errors"
 	"fmt"
 	"github.com/manifoldco/promptui"
 	"log"
@@ -44,7 +45,7 @@ func (c Campsites) Explore() error {
 			model.Campsite{CampsiteName: "Exit Campsites"},
 		)
 
-		if err == prompt.ExitError {
+		if errors.Is(err, prompt.ExitError) {
 			return nil
 		} else if err != nil {
 			return err

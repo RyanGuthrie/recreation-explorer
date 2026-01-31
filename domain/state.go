@@ -1,6 +1,7 @@
 package domain
 
 import (
+	"errors"
 	"fmt"
 	"github.com/manifoldco/promptui"
 	"log"
@@ -67,7 +68,7 @@ func (state State) Explore() error {
 
 	for {
 		facility, err := GetFacility(state, cmd.ParsedResponse.Facilities, &cursorPos)
-		if err == prompt.ExitError {
+		if errors.Is(err, prompt.ExitError) {
 			return nil
 		} else if err != nil {
 			log.Println("Failed getting facility: ", err)

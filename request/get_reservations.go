@@ -17,14 +17,14 @@ type GetReservationsCmd struct {
 
 func NewGetReservationsRequest(client recreation_gov.Client) (*Cmd[response.GetReservationsResponse], error) {
 	queryParams := make(map[string]string)
-	queryParams["dataFrom"] = "2023-02-06"
-	queryParams["dateTo"] = "2024-02-06"
+	queryParams["dateFrom"] = "2023-05-30"
+	queryParams["dateTo"] = "2023-07-15"
 
 	uri := NewRequestUrl(reservationsUrl, queryParams)
 
 	req, err := http.NewRequest(http.MethodGet, uri.String(), nil)
 	if err != nil {
-		return nil, fmt.Errorf("failed creating request to %s", uri)
+		return nil, fmt.Errorf("failed creating request to %v", uri)
 	}
 
 	cmd := NewCmd[response.GetReservationsResponse](client, req)

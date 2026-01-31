@@ -1,6 +1,7 @@
 package domain
 
 import (
+	"errors"
 	"fmt"
 	"github.com/manifoldco/promptui"
 	"log"
@@ -59,7 +60,7 @@ func Explore(facility model.Facility) error {
 			fmt.Sprintf("Exit %s", facility.FacilityName),
 		)
 
-		if err == prompt.ExitError {
+		if errors.Is(err, prompt.ExitError) {
 			return nil
 		} else if err != nil {
 			return err
